@@ -6,7 +6,63 @@
     <link rel="stylesheet" href="layui/css/layui.css">
 </head>
 <body>
-hi
+<div class="layui-fluid" id="app">
+    <div class="layui-row">
+        <div class="layui-col-md5">
+            <div class="layui-row">
+                <fieldset class="layui-elem-field">
+                    <legend>电脑详情</legend>
+                    <div class="layui-field-box">
+                        <table class="layui-table">
+                            <colgroup>
+                                <col width="150">
+                                <col width="200">
+                                <col>
+                            </colgroup>
+                            <tbody>
+                            <tr>
+                                <td>操作系统</td>
+                                <td colspan="2">{{staticInfo.sysName}}</td>
+                            </tr>
+                            <tr>
+                                <td>开机时间</td>
+                                <td colspan="2">{{staticInfo.sysStart}}</td>
+                            </tr>
+                            <tr v-for="item in staticInfo.diskInfo">
+                                <td>{{item.path}}</td>
+                                <td>{{item.total}}</td>
+                                <td>{{item.free}}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+        <div class="layui-col-md7">
+            <div>
+                <fieldset class="layui-elem-field">
+                    <legend>cpu情况</legend>
+                    <div class="layui-field-box">
+                        <div style="height: 300px" id="view-show">
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+            <div>
+                <fieldset class="layui-elem-field">
+                    <legend>内存情况</legend>
+                    <div class="layui-field-box">
+                        <div style="height: 300px" id="view-show2">
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+    </div>
+
+</div>
+
 </body>
 <script src="layui/layui.all.js"></script>
 <script src="js/vue.js"></script>
@@ -14,6 +70,74 @@ hi
 <script src="js/axios.js"></script>
 <script src="js/echarts.min.js"></script>
 <script type="application/javascript">
-
+    let app = new Vue({
+        el: "#app",
+        data: {
+            staticInfo: {},
+            dyNamicInfo: {},
+        }
+    });
+    let host = "http://localhost:8080";
+    axios.get(host + "/control/getStaticInfo").then(res => {
+        console.log(res)
+        app.staticInfo = JSON.parse(res.data.data);
+    })
+    //--------------------------网卡速率图标展示--------------------------
+    let echart_datas = [];
+    let echart_datas2 = [];
+    let myChart = echarts.init(document.getElementById('view-show'));
+    let myChart2 = echarts.init(document.getElementById('view-show2'));
+    let option = {
+        xAxis: {
+            type: 'time',
+        },
+        yAxis: {
+            max: 100,
+            type: 'value'
+        },
+        series: [{
+            type: 'line',
+            showSymbol: false,
+            hoverAnimation: false,
+        }]
+    };
+    // 使用刚指定的配置项和数据显示图表。
+    myChart.setOption(option);
+    myChart2.setOption(option);
+    setInterval(() => {
+        axios.get(host + "/control/getDynamicInfo")
+            .then(res => {
+                    if (echart_datas.length > 50) {
+                        for (let i = 0; i < 6; i++) {
+                            echart_datas.shift();
+                        }
+                    }
+                    if (echart_datas2.length > 50) {
+                        for (let i = 0; i < 6; i++) {
+                            echart_datas2.shift();
+                        }
+                    }
+                    console.log(res.data);
+                    echart_datas.push({"value": [new Date(), parseInt(JSON.parse(res.data.data).cpuUsedByUser)]});
+                    let use = parseInt(JSON.parse(res.data.data).usedMem);
+                    let total = parseInt(JSON.parse(res.data.data).totalMem);
+                    echart_datas2.push({"value": [new Date(), use/total*100]});
+                }
+            );
+        myChart.setOption(
+            {
+                series: [{
+                    data: echart_datas,
+                }]
+            }
+        )
+        myChart2.setOption(
+            {
+                series: [{
+                    data: echart_datas2,
+                }]
+            }
+        )
+    }, 3000);
 </script>
 </html>

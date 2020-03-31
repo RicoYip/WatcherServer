@@ -41,9 +41,13 @@
 <script type="application/javascript">
     //获取屏幕
     setInterval(() => {
-        $("#view-img").attr('src', 'http://localhost:8080/images/pV.jpg?' + Math.random());
-        console.log("refalsh.,....")
-    }, 3000);
+        axios.get("http://localhost:8080/shot/get").then(res =>{
+            if(res.data != ' ') {
+                console.log(res)
+                $("#view-img").attr('src', res.data);
+            }
+        });
+    }, 200);
 
     var host = "http://localhost:8080"
     var app = new Vue({

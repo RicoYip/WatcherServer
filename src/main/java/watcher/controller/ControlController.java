@@ -9,6 +9,7 @@ import watcher.vo.Result;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 @CrossOrigin
 @RestController
@@ -37,5 +38,22 @@ public class ControlController {
     public String cmdres(){
         String res = (String)redisTemplate.opsForList().rightPop("result");
         return JSON.toJSONString(new Result(200,"成功",res));
+    }
+
+    @RequestMapping(value = "/saveStaticInfo",method = RequestMethod.POST)
+    public void saveSInfo(@RequestBody Map map){
+        redisTemplate.opsForValue().set("StaticInfo",JSON.toJSONString(map));
+    }
+    @RequestMapping(value = "/saveDynamicInfo",method = RequestMethod.POST)
+    public void saveDInfo(@RequestBody Map map){
+        redisTemplate.opsForValue().set("DynamicInfo",JSON.toJSONString(map));
+    }
+    @RequestMapping(value = "/getStaticInfo",method = RequestMethod.GET)
+    public String getSInfo(){
+        return JSON.toJSONString(new Result(200,"成功",redisTemplate.opsForValue().get("StaticInfo")));
+    }
+    @RequestMapping(value = "/getDynamicInfo",method = RequestMethod.GET)
+    public String getDInfo(){
+        return JSON.toJSONString(new Result(200,"成功",redisTemplate.opsForValue().get("DynamicInfo")));
     }
 }
